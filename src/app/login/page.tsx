@@ -51,7 +51,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm space-y-8">
         <div className="text-center">
           <h2 className="mt-6 text-3xl font-extrabold text-foreground tracking-tight">
-            Staff Portal
+            Admin Portal
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
             Sign in to access your dashboard

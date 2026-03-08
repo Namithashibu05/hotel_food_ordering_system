@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/db';
@@ -38,6 +39,7 @@ export async function PUT(request: NextRequest) {
     await dbConnect();
     try {
         const body = await request.json();
+        console.log('UPDATING MENU ITEM:', body);
         const { _id, ...updateData } = body;
 
         if (!_id) {

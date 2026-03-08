@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ThemeToggle } from "./ThemeToggle";
+import { UtensilsCrossed, ShoppingBag, Clock } from "lucide-react";
 
 export default function Header({
   cartCount = 0,
   openCart,
   tableNumber,
 }: {
-  cartCount: number;
-  openCart: () => void;
+  cartCount?: number;
+  openCart?: () => void;
   tableNumber?: string;
 }) {
   const router = useRouter();
@@ -19,72 +20,65 @@ export default function Header({
     router.push(`/?table=${newTable}`);
   };
 
-  // Generate table options (1-20)
   const tableOptions = Array.from({ length: 20 }, (_, i) => (i + 1).toString());
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="w-full flex h-16 items-center justify-between px-4">
-        <div className="mr-4 hidden md:flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <span className="text-xl font-bold tracking-tight text-primary sm:inline-block">
-              Hotel Food Ordering System
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
+        <div className="flex items-center gap-4">
+          <Link href={`/?table=${tableNumber}`} className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <UtensilsCrossed className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <span className="text-xl font-black tracking-tight text-foreground hidden sm:inline-block">
+              Hotel Food <span className="text-primary">Ordering System</span>
             </span>
           </Link>
-        </div>
-        <div className="flex flex-1 items-center justify-between space-x-4 md:justify-end">
-          <div className="w-full flex-1 md:w-auto md:flex-none">
-            {tableNumber && (
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="table-select"
-                  className="text-sm font-medium text-muted-foreground hidden sm:inline"
-                >
-                  Table:
-                </label>
-                <select
-                  id="table-select"
-                  value={tableNumber}
-                  onChange={(e) => handleTableChange(e.target.value)}
-                  className="px-3 py-1.5 rounded-md border border-border bg-card text-card-foreground text-sm font-medium hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors cursor-pointer"
-                >
-                  {tableOptions.map((table) => (
-                    <option key={table} value={table}>
-                      Table #{table}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <button
-              onClick={openCart}
-              className="flex items-center justify-center p-2 rounded-full hover:bg-accent hover:text-accent-foreground transition-colors relative text-foreground"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="lucide lucide-shopping-cart"
+          
+          {tableNumber && (
+            <div className="flex items-center gap-2 bg-muted/50 px-3 py-1 rounded-full border border-border">
+              <span className="text-[10px] font-black uppercase text-muted-foreground">Table</span>
+              <select
+                value={tableNumber}
+                onChange={(e) => handleTableChange(e.target.value)}
+                className="bg-transparent text-sm font-bold focus:outline-none cursor-pointer"
               >
-                <circle cx="8" cy="21" r="1" />
-                <circle cx="19" cy="21" r="1" />
-                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
-              </svg>
-              {cartCount > 0 && (
-                <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-destructive rounded-full transform translate-x-1/4 -translate-y-1/4">
-                  {cartCount}
-                </span>
-              )}
-            </button>
+                {tableOptions.map((table) => (
+                  <option key={table} value={table} className="bg-background">
+                     #{table}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          {tableNumber && (
+            <Link 
+              href={`/order-status?table=${tableNumber}`}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
+            >
+              <Clock className="w-4 h-4" />
+              <span className="hidden sm:inline">Track Order</span>
+            </Link>
+          )}
+
+          <div className="flex items-center gap-2 border-l border-border pl-3">
+            <ThemeToggle />
+            {openCart && (
+              <button
+                onClick={openCart}
+                className="group flex items-center justify-center p-2 rounded-xl hover:bg-primary/10 transition-all relative"
+              >
+                <ShoppingBag className="w-6 h-6 text-foreground group-hover:text-primary transition-colors" />
+                {cartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground ring-2 ring-background">
+                    {cartCount}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
       </div>

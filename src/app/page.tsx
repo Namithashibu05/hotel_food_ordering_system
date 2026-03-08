@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, useRef, useCallback } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Header from "@/components/Header";
 import MenuCard from "@/components/MenuCard";
@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import { MenuItem } from "@/types";
 
 function MenuContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tableNumber = searchParams.get("table") || "1";
 
@@ -234,6 +235,7 @@ function MenuContent() {
         toast.success("Order placed successfully!");
         setCart([]);
         setIsCartOpen(false);
+        router.push(`/order-status?table=${tableNumber}`);
       } else {
         toast.error("Failed to place order.");
       }

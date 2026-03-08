@@ -9,5 +9,6 @@ export interface MenuItem {
     image?: string;
     isAvailable: boolean;
     isVeg: boolean;
-    spiceLevel?: 'Mild' | 'Medium' | 'Hot';
+    spiceLevel?: 'Nil' | 'Mild' | 'Medium' | 'Hot';
+    prepTime?: number; // Estimated preparation time in minutes
 }

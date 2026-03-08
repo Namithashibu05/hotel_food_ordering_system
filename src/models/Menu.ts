@@ -9,7 +9,8 @@ export interface IMenu extends Document {
     image?: string;
     isAvailable: boolean;
     isVeg: boolean;
-    spiceLevel?: 'Mild' | 'Medium' | 'Hot';
+    spiceLevel?: 'Nil' | 'Mild' | 'Medium' | 'Hot';
+    prepTime: number; // in minutes
     createdAt: Date;
     updatedAt: Date;
 }
@@ -24,9 +25,14 @@ const MenuSchema: Schema = new Schema(
         image: { type: String }, // URL to image
         isAvailable: { type: Boolean, default: true },
         isVeg: { type: Boolean, default: true },
-        spiceLevel: { type: String, enum: ['Mild', 'Medium', 'Hot'], default: 'Medium' },
+        spiceLevel: { type: String, enum: ['Nil', 'Mild', 'Medium', 'Hot'], default: 'Nil' },
+        prepTime: { type: Number, default: 15 }, // Default prep time: 15 mins
     },
     { timestamps: true }
 );
 
-export default mongoose.models.Menu || mongoose.model<IMenu>('Menu', MenuSchema);
+// Refresh model if schema changed (important for Next.js hot reloading when adding fields)
+if (mongoose.models.Menu) {
+    delete mongoose.models.Menu;
+}
+export default mongoose.model<IMenu>('Menu', MenuSchema);
