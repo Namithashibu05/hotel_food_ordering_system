@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { Receipt, ChevronLeft, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
+import { Receipt, ChevronLeft, CreditCard, CheckCircle, AlertCircle, Printer } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 
@@ -65,7 +65,7 @@ function BillContent() {
         if (res.ok) {
           const data = await res.json();
           const activeOrders = data.filter((o: Order) => 
-            ['Preparing', 'Ready', 'Delivered'].includes(o.status)
+            !['Cancelled'].includes(o.status)
           );
           setOrders(activeOrders);
         }
@@ -159,12 +159,14 @@ function BillContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <Header tableNumber={tableNumber} />
+    <div className="min-h-screen flex flex-col bg-slate-50/50 print:bg-white">
+      <div className="print:hidden">
+        <Header tableNumber={tableNumber} />
+      </div>
       
-      <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center">
+      <main className="container mx-auto px-4 py-8 flex-1 flex flex-col items-center print:py-0 print:px-0">
         <div className="max-w-md w-full">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 print:hidden">
             <Link href={`/order-status?table=${tableNumber}`} className="flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-colors bg-white border border-gray-200 rounded-full px-4 py-2">
               <ChevronLeft className="w-4 h-4" />
               <span>Back to Orders</span>
@@ -177,7 +179,7 @@ function BillContent() {
                <p className="mt-4 text-gray-500 font-bold">Generating your bill...</p>
              </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-[2rem] border border-gray-200 px-6 shadow-sm">
+            <div className="text-center py-20 bg-white rounded-[2rem] border border-gray-200 px-6 shadow-sm print:hidden">
               <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Receipt className="w-10 h-10 text-gray-300" />
               </div>
@@ -188,83 +190,103 @@ function BillContent() {
               </Link>
             </div>
           ) : (
-            <div className="bg-white rounded-[2.5rem] border border-gray-200 overflow-hidden shadow-2xl">
-              <div className="p-8 pb-6 text-center border-b-2 border-dashed border-gray-200 mb-6 bg-gray-50/50">
-                  <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Hotel Delish</h2>
-                  <p className="text-gray-500 text-xs uppercase font-bold tracking-widest mb-4">Fine Dining Experience</p>
-                  <div className="flex justify-center gap-4 text-[10px] font-mono text-gray-400">
-                    <span>TBL: #{tableNumber}</span>
-                    <span>SID: {sessionId.slice(-6).toUpperCase()}</span>
+            <div className="bg-white rounded-[2.5rem] border border-gray-200 overflow-hidden shadow-2xl print:shadow-none print:border-none print:rounded-none">
+              <div className="p-8 pb-6 text-center border-b-2 border-dashed border-gray-200 mb-6 bg-gray-50/50 print:bg-white print:p-4">
+                  <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-1">Hotel Delish</h2>
+                  <p className="text-gray-400 text-[10px] uppercase font-black tracking-[0.2em] mb-4">Fine Dining Experience</p>
+                  <div className="flex justify-center gap-6 text-[11px] font-bold text-gray-600">
+                    <span className="bg-gray-900 text-white px-3 py-1 rounded-full print:bg-transparent print:text-black">Table #{tableNumber}</span>
+                    <span className="py-1">{new Date().toLocaleDateString()}</span>
                   </div>
               </div>
 
-              <div className="px-8 mb-6">
-                  <table className="w-full text-sm">
+              <div className="px-8 mb-8 print:px-4">
+                  <table className="w-full">
                       <thead>
-                          <tr className="border-b border-gray-900 text-left">
-                              <th className="pb-3 pt-2 font-bold uppercase text-[10px] tracking-wider text-gray-400">Item</th>
-                              <th className="pb-3 pt-2 text-center font-bold uppercase text-[10px] tracking-wider text-gray-400">Qty</th>
-                              <th className="pb-3 pt-2 text-right font-bold uppercase text-[10px] tracking-wider text-gray-400">Total</th>
+                          <tr className="border-b-2 border-gray-900">
+                              <th className="pb-4 text-left font-black uppercase text-[10px] tracking-widest text-gray-400">Description</th>
+                              <th className="pb-4 text-center font-black uppercase text-[10px] tracking-widest text-gray-400">Qty</th>
+                              <th className="pb-4 text-right font-black uppercase text-[10px] tracking-widest text-gray-400">Amount</th>
                           </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100">
                           {aggregatedItems.map((item, idx) => (
-                              <tr key={idx}>
-                                  <td className="py-4 font-bold text-gray-800">{item.name}</td>
-                                  <td className="py-4 text-center text-gray-600 font-medium">{item.quantity}</td>
-                                  <td className="py-4 text-right font-black text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</td>
+                              <tr key={idx} className="group">
+                                  <td className="py-5">
+                                    <span className="font-bold text-gray-800 block leading-tight">{item.name}</span>
+                                    <span className="text-[10px] text-gray-400 font-medium">₹{item.price.toFixed(2)} / unit</span>
+                                  </td>
+                                  <td className="py-5 text-center text-gray-600 font-bold">{item.quantity}</td>
+                                  <td className="py-5 text-right font-black text-gray-900">₹{(item.price * item.quantity).toFixed(2)}</td>
                               </tr>
                           ))}
                       </tbody>
                   </table>
               </div>
 
-              <div className="px-8 border-t border-gray-100 pt-6 space-y-3 bg-gray-50/30">
-                  <div className="flex justify-between text-gray-500 font-medium">
+              <div className="px-8 py-8 space-y-3 bg-gray-50 print:bg-white print:px-4 border-t-2 border-dashed border-gray-100">
+                  <div className="flex justify-between text-gray-500 font-bold text-sm">
                       <span>Subtotal</span>
-                      <span className="font-bold">₹{subtotal.toFixed(2)}</span>
+                      <span className="text-gray-900">₹{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500 font-medium text-sm">
+                  <div className="flex justify-between text-gray-500 font-bold text-sm">
                       <span>GST (5%)</span>
-                      <span className="font-bold">₹{tax.toFixed(2)}</span>
+                      <span className="text-gray-900">₹{tax.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-gray-500 font-medium text-sm border-b border-gray-100 pb-3">
+                  <div className="flex justify-between text-gray-500 font-bold text-sm pb-4 border-b border-gray-200">
                       <span>Service Charge (2%)</span>
-                      <span className="font-bold">₹{serviceCharge.toFixed(2)}</span>
+                      <span className="text-gray-900">₹{serviceCharge.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between items-center py-4">
-                      <span className="text-sm font-black text-gray-400 uppercase tracking-widest">Total Payable</span>
-                      <span className="text-4xl font-black text-gray-900">₹{grandTotal.toFixed(2)}</span>
+                  <div className="flex justify-between items-center pt-4">
+                      <span className="text-xs font-black text-gray-400 uppercase tracking-widest">Total Payable</span>
+                      <span className="text-4xl font-black text-gray-900 tracking-tighter">₹{grandTotal.toFixed(2)}</span>
                   </div>
               </div>
               
-              <div className="p-8 pt-4 space-y-4">
-                  <button 
-                    onClick={handlePayNow}
-                    disabled={isPaying}
-                    className="w-full bg-indigo-600 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-200 disabled:opacity-50"
-                  >
-                    {isPaying ? (
-                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    ) : (
-                      <CreditCard className="w-6 h-6" />
-                    )}
-                    <span className="text-lg">Pay Online Now</span>
-                  </button>
+              <div className="p-8 pt-4 space-y-4 print:hidden">
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={handlePayNow}
+                      disabled={isPaying}
+                      className="flex-1 bg-indigo-600 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:bg-indigo-700 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-200 disabled:opacity-50"
+                    >
+                      {isPaying ? (
+                        <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <CreditCard className="w-6 h-6" />
+                      )}
+                      <span className="text-lg">Proceed to Pay</span>
+                    </button>
+                    
+                    <button 
+                      onClick={() => window.print()}
+                      className="px-6 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-2xl hover:bg-slate-50 transition-all flex items-center justify-center shadow-sm"
+                      title="Print Receipt"
+                    >
+                      <Printer className="w-6 h-6" />
+                    </button>
+                  </div>
                   
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 border border-gray-100">
-                    <AlertCircle className="w-5 h-5 text-gray-400" />
-                    <p className="text-[10px] text-gray-500 leading-tight">
-                      By paying online, your payment is instantly verified and your order history will be updated. You can also pay at the counter using Cash or UPI.
+                  <div className="flex items-start gap-3 p-4 rounded-xl bg-indigo-50/50 border border-indigo-100">
+                    <AlertCircle className="w-5 h-5 text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-indigo-600 font-medium leading-relaxed">
+                      Your payment is secured and encrypted. Once paid, your table session will be closed automatically. You can also pay at the counter.
                     </p>
                   </div>
+              </div>
+
+              <div className="hidden print:block text-center p-8 border-t-2 border-dashed border-gray-100">
+                  <p className="font-bold text-gray-900">Thank You for Dining!</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">Please Visit Again</p>
               </div>
             </div>
           )}
         </div>
       </main>
       
-      <Footer />
+      <div className="print:hidden">
+        <Footer />
+      </div>
     </div>
   );
 }

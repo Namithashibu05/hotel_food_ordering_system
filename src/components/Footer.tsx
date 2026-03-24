@@ -8,7 +8,7 @@ export default function Footer() {
           {/* Brand Section */}
           <div>
             <h3 className="text-lg font-bold text-foreground mb-2">
-              Hotel Food Ordering
+              Hotel Delish - Fine Dining
             </h3>
             <p className="text-sm text-muted-foreground">
               Experience the best dining with our premium food ordering service.
@@ -70,7 +70,7 @@ export default function Footer() {
 
         <div className="border-t border-border mt-8 pt-6 text-center text-xs text-muted-foreground">
           <p>
-            &copy; {new Date().getFullYear()} Hotel Food Ordering System. All
+            &copy; {new Date().getFullYear()} Hotel Delish - Fine Dining. All
             rights reserved.
           </p>
         </div>

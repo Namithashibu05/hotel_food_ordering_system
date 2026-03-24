@@ -138,7 +138,7 @@ function OrderStatusContent() {
             </h1>
             <Link
               href={`/bill?table=${tableNumber}`}
-              className="flex items-center gap-2 text-sm font-bold text-indigo-600 hover:text-indigo-700 transition-colors bg-indigo-50 border border-indigo-100 rounded-full px-4 py-2"
+              className="flex items-center gap-2 text-sm font-black text-white hover:bg-indigo-700 transition-all bg-indigo-600 rounded-full px-5 py-2.5 shadow-lg shadow-indigo-200 hover:scale-105 active:scale-95"
             >
               <Receipt className="w-4 h-4" />
               <span>View Bill</span>
