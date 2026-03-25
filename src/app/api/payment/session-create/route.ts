@@ -3,12 +3,13 @@ import Razorpay from 'razorpay';
 import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 
-const razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID!,
-    key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
 
 export async function POST(req: Request) {
+    const razorpay = new Razorpay({
+        key_id: process.env.RAZORPAY_KEY_ID!,
+        key_secret: process.env.RAZORPAY_KEY_SECRET!,
+    });
+
     await dbConnect();
     try {
         const body = await req.json();
