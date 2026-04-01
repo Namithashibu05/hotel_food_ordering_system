@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { ChevronDown, Plus, Minus, Trash2, Edit3, Camera, X, Printer, CreditCard, Banknote, Smartphone, Percent, CheckCircle2, Receipt, Search } from "lucide-react";
+import { ChevronDown, Plus, Minus, Trash2, Edit3, Camera, X, Printer, CreditCard, Banknote, Smartphone, Percent, CheckCircle2, Receipt, Search, LogOut, User } from "lucide-react";
 
 interface OrderItem {
   menuItem: string;
@@ -77,6 +77,8 @@ export default function AdminDashboard() {
   const [billingAppliedDiscount, setBillingAppliedDiscount] = useState<number>(0);
   const [billingPaymentMethod, setBillingPaymentMethod] = useState<'Cash' | 'UPI' | 'Card'>('Cash');
   const [billingSearchQuery, setBillingSearchQuery] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const fetchOrders = async () => {
     try {
@@ -94,6 +96,19 @@ export default function AdminDashboard() {
     fetchOrders();
     const interval = setInterval(fetchOrders, 10000); // Poll every 10s
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Kitchen live clock & delay alert every minute
@@ -150,9 +165,21 @@ export default function AdminDashboard() {
     }
   };
 
-  const logout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/admin/login");
+  const logout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setShowLogoutModal(false);
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+      toast.success("Logged out successfully");
+      router.push("/admin/login");
+    } catch (error) {
+      toast.error("Logout failed");
+      setIsLoggingOut(false);
+    }
   };
 
   // Handle image upload with progress
@@ -486,11 +513,18 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Sidebar Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`bg-card border-r border-border transition-all duration-300 ${sidebarOpen ? "w-64" : "w-20"
-          } flex flex-col print:hidden`}
-        style={{ minHeight: "100vh" }}
+        className={`fixed inset-y-0 left-0 z-50 bg-card border-r border-border transition-all duration-300 lg:relative flex flex-col h-full print:hidden ${sidebarOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0 lg:w-20"
+          }`}
       >
         {/* Sidebar Header */}
         <div className="p-4 border-b border-border">
@@ -518,7 +552,10 @@ export default function AdminDashboard() {
           {navigationItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveSection(item.id)}
+              onClick={() => {
+                setActiveSection(item.id);
+                if (window.innerWidth < 1024) setSidebarOpen(false);
+              }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${activeSection === item.id
                 ? "bg-primary text-primary-foreground font-medium"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -541,14 +578,22 @@ export default function AdminDashboard() {
           ))}
         </nav>
 
-        {/* Sidebar Footer */}
         <div className="p-3 border-t border-border">
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition-colors"
+            disabled={isLoggingOut}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
+              isLoggingOut 
+                ? "bg-muted text-muted-foreground cursor-not-allowed" 
+                : "text-red-500 hover:bg-red-500/10 active:scale-95"
+            }`}
           >
-            <span className="text-lg">🚪</span>
-            {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
+            <LogOut className={`w-5 h-5 ${isLoggingOut ? "animate-pulse" : ""}`} />
+            {sidebarOpen && (
+              <span className="text-sm font-semibold">
+                {isLoggingOut ? "Logging out..." : "Logout"}
+              </span>
+            )}
           </button>
         </div>
       </aside>
@@ -559,31 +604,48 @@ export default function AdminDashboard() {
         <nav className="bg-card border-b border-border print:hidden">
           <div className="px-6 py-3">
             <div className="flex justify-between items-center">
-              <div>
-                <h1 className="text-xl font-bold text-foreground">
-                  {navigationItems.find((item) => item.id === activeSection)
-                    ?.name || "Dashboard"}
-                </h1>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {new Date().toLocaleDateString("en-US", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </p>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="p-2 -ml-2 rounded-lg hover:bg-muted transition-colors lg:hidden"
+                  aria-label="Toggle Menu"
+                >
+                  <span className="text-xl">{sidebarOpen ? "✕" : "☰"}</span>
+                </button>
+                <div>
+                  <h1 className="text-xl font-bold text-foreground">
+                    {navigationItems.find((item) => item.id === activeSection)
+                      ?.name || "Dashboard"}
+                  </h1>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {new Date().toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="text-right">
+                <div className="hidden sm:block text-right">
                   <p className="text-sm font-medium text-foreground">
                     Administrator
                   </p>
                   <p className="text-xs text-muted-foreground">Online</p>
                 </div>
                 <ThemeToggle />
-                <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-semibold text-sm">
-                  A
-                </div>
+                <button 
+                  onClick={logout}
+                  className="w-10 h-10 rounded-xl bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 flex items-center justify-center group relative"
+                  title="Logout"
+                >
+                  <User className="w-5 h-5 group-hover:hidden" />
+                  <LogOut className="w-5 h-5 hidden group-hover:block" />
+                  
+                  {/* Tooltip-like effect or label for mobile if needed */}
+                  <span className="sr-only">Logout</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2428,6 +2490,34 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Logout Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+          <div className="bg-card border border-border rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-8 text-center">
+              <div className="w-20 h-20 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+                <LogOut className="w-10 h-10" />
+              </div>
+              <h3 className="text-2xl font-black text-foreground mb-2">Wait a moment!</h3>
+              <p className="text-muted-foreground font-medium">Are you sure you want to log out of the admin panel?</p>
+            </div>
+            <div className="flex p-4 gap-3 bg-muted/50 border-t border-border">
+              <button 
+                onClick={() => setShowLogoutModal(false)}
+                className="flex-1 px-6 py-4 rounded-2xl bg-card border border-border text-foreground font-bold hover:bg-muted transition-all active:scale-95"
+              >
+                No, Stay
+              </button>
+              <button 
+                onClick={handleLogoutConfirm}
+                className="flex-1 px-6 py-4 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-lg shadow-red-600/20 transition-all active:scale-95"
+              >
+                Yes, Logout
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -26,6 +26,10 @@ function MenuContent() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [vegFilter, setVegFilter] = useState<"all" | "veg" | "non-veg">("all");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [searchResults, setSearchResults] = useState<MenuItem[]>([]);
+  const [showResults, setShowResults] = useState(false);
   const [ordering, setOrdering] = useState(false);
   const [selectedItemForModal, setSelectedItemForModal] =
     useState<MenuItem | null>(null);
@@ -35,6 +39,7 @@ function MenuContent() {
   const [sessionId, setSessionId] = useState("");
   const [compensationNote, setCompensationNote] = useState("");
   const [isCompModalOpen, setIsCompModalOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   // Pagination & Loading States
   const [page, setPage] = useState(1);
@@ -107,6 +112,7 @@ function MenuContent() {
           limit: limit.toString(),
           category: selectedCategory,
           veg: vegFilter,
+          search: debouncedSearch,
         });
 
         const res = await fetch(`/api/menu/list?${queryParams}`, { signal });
@@ -185,7 +191,49 @@ function MenuContent() {
     // If page was 2, setPage(1) queues update. effect runs for category change. effect runs for page change.
     // However, react might batch these or we might get 2 requests.
     // It's acceptable for now given the complexity of perfect debouncing here.
-  }, [selectedCategory, vegFilter]);
+  }, [selectedCategory, vegFilter, debouncedSearch]);
+
+  // Real-time search result list for the "box"
+  useEffect(() => {
+    if (searchQuery.trim().length > 1) {
+      const searchItems = async () => {
+        try {
+          const res = await fetch(`/api/menu/list?page=1&limit=5&search=${searchQuery}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSearchResults(data.items);
+            setShowResults(true);
+          }
+        } catch (error) {
+          console.error("Search failed", error);
+        }
+      };
+      const timer = setTimeout(searchItems, 300);
+      return () => clearTimeout(timer);
+    } else {
+      setSearchResults([]);
+      setShowResults(false);
+    }
+  }, [searchQuery]);
+
+  // Debounce search input for main grid
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Click outside search listener
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const fetchCategories = async () => {
     try {
@@ -304,6 +352,76 @@ function MenuContent() {
             ))}
           </div>
 
+          <div 
+            ref={searchRef}
+            className="flex-1 max-w-sm w-full relative group"
+          >
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search dishes..."
+                value={searchQuery}
+                onFocus={() => searchQuery.length > 1 && setShowResults(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 rounded-full bg-card border border-border focus:ring-2 focus:ring-primary focus:outline-none transition-all shadow-sm"
+              />
+              <svg 
+                className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              {searchQuery && (
+                <button 
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Results Box */}
+            {showResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-1 duration-200">
+                <div className="p-2 border-b border-border bg-muted/50">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-2">Suggestions</p>
+                </div>
+                <div className="max-h-[300px] overflow-y-auto">
+                  {searchResults.map((item) => (
+                    <button
+                      key={item._id as string}
+                      onClick={() => {
+                        setSelectedItemForModal(item);
+                        setShowResults(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-primary/5 transition-colors text-left border-b border-border/50 last:border-0"
+                    >
+                      <div className="w-10 h-10 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                        {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">₹{item.price}</p>
+                      </div>
+                      <div className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-green-500" : "bg-red-500"}`} />
+                    </button>
+                  ))}
+                </div>
+                <div className="p-2 bg-muted/20 text-center">
+                   <button 
+                    onClick={() => setShowResults(false)}
+                    className="text-[10px] font-bold text-primary hover:underline"
+                   >
+                     Show all results
+                   </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="flex items-center gap-2 border border-border rounded-full p-1 bg-card">
             <button
               onClick={() => setVegFilter("all")}
@@ -358,6 +476,22 @@ function MenuContent() {
           </div>
         ) : (
           <>
+            {debouncedSearch && (
+              <div className="mb-4 p-3 bg-primary/5 rounded-xl border border-primary/10 flex items-center gap-2">
+                 <span className="text-sm font-medium text-muted-foreground italic">
+                   Showing results for: 
+                 </span>
+                 <span className="text-sm font-bold text-primary px-2 py-0.5 bg-primary/10 rounded-md">
+                   {debouncedSearch}
+                 </span>
+                 <button 
+                  onClick={() => setSearchQuery("")}
+                  className="ml-auto text-xs text-primary hover:underline font-bold"
+                 >
+                   Clear Search
+                 </button>
+              </div>
+            )}
             {/* Menu Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {menuItems.map((item, index) => {

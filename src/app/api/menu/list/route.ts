@@ -11,8 +11,13 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '12');
         const category = searchParams.get('category') || 'All';
         const vegFilter = searchParams.get('veg') || 'all';
+        const search = searchParams.get('search') || '';
 
         const query: any = {};
+
+        if (search) {
+            query.name = { $regex: search, $options: 'i' };
+        }
 
         if (category !== 'All') {
             query.category = category;
