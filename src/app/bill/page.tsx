@@ -195,7 +195,6 @@ function BillContent() {
                   <h2 className="text-4xl font-black text-gray-900 tracking-tighter mb-1">Hotel Delish</h2>
                   <p className="text-gray-400 text-[10px] uppercase font-black tracking-[0.2em] mb-4">Fine Dining Experience</p>
                   <div className="flex justify-center gap-6 text-[11px] font-bold text-gray-600">
-                    <span className="bg-gray-900 text-white px-3 py-1 rounded-full print:bg-transparent print:text-black">Table #{tableNumber}</span>
                     <span className="py-1">{new Date().toLocaleDateString()}</span>
                   </div>
               </div>
