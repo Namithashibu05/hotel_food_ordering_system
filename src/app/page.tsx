@@ -13,6 +13,7 @@ import OrderConfirmationModal from "@/components/OrderConfirmationModal";
 import { MenuItem } from "@/types";
 import GameZone from "@/components/GameZone";
 import CompensationModal from "@/components/CompensationModal";
+import { ShoppingBag } from "lucide-react";
 
 
 function MenuContent() {
@@ -39,6 +40,7 @@ function MenuContent() {
   const [sessionId, setSessionId] = useState("");
   const [compensationNote, setCompensationNote] = useState("");
   const [isCompModalOpen, setIsCompModalOpen] = useState(false);
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
 
   // Pagination & Loading States
@@ -333,6 +335,20 @@ function MenuContent() {
         tableNumber={tableNumber}
       />
 
+      {/* Floating Stock Toggle for Quick View */}
+      <button 
+        onClick={() => setIsStockModalOpen(true)}
+        className="fixed bottom-28 right-6 z-40 bg-emerald-600 text-white p-4 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group border-2 border-white/20"
+      >
+        <div className="relative">
+          <ShoppingBag className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-emerald-600 rounded-full animate-ping"></span>
+        </div>
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-black whitespace-nowrap text-xs uppercase tracking-widest">
+          Live Stock
+        </span>
+      </button>
+
       <main className="container mx-auto px-4 py-8 flex-1">
         {/* Category Tabs & Veg Filter */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
@@ -556,6 +572,73 @@ function MenuContent() {
         onClose={() => setIsCompModalOpen(false)} 
         note={compensationNote} 
       />
+
+      {/* Stock Availability Modal */}
+      {isStockModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-card w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-8 pb-4 flex justify-between items-center border-b border-border">
+              <div>
+                <h3 className="text-2xl font-black text-foreground tracking-tight">Available Today</h3>
+                <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest mt-1">Fresh from the kitchen</p>
+              </div>
+              <button 
+                onClick={() => setIsStockModalOpen(false)}
+                className="w-10 h-10 rounded-full bg-muted border border-border flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all font-black"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-[60vh] overflow-y-auto space-y-3">
+              {menuItems.filter(i => i.isAvailable).length === 0 ? (
+                <div className="text-center py-10">
+                  <p className="text-muted-foreground">Refreshing stock list...</p>
+                </div>
+              ) : (
+                menuItems.filter(i => i.isAvailable).map((item) => (
+                  <div 
+                    key={item._id as string}
+                    className="flex items-center gap-4 p-3 rounded-2xl bg-muted/30 border border-border/50 hover:bg-muted/60 transition-all group"
+                  >
+                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-muted flex-shrink-0">
+                      {item.image && <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black text-foreground truncate">{item.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className={`w-2 h-2 rounded-full ${item.isVeg ? "bg-green-500" : "bg-red-500"}`}></span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase">{item.category}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-black text-primary">₹{item.price}</p>
+                      <button 
+                        onClick={() => {
+                          addToCart(item);
+                          setIsStockModalOpen(false);
+                        }}
+                        className="text-[10px] font-black uppercase text-indigo-500 hover:text-indigo-700 mt-1"
+                      >
+                        + Quick Add
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="p-6 bg-muted/10 border-t border-border">
+               <button 
+                onClick={() => setIsStockModalOpen(false)}
+                className="w-full py-4 rounded-2xl bg-gray-900 text-white font-black uppercase tracking-widest text-xs hover:opacity-90 transition-all shadow-xl"
+               >
+                 Close & Browse Menu
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
