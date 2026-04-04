@@ -122,6 +122,16 @@ export async function POST() {
                 spiceLevel: 'Mild',
             },
             {
+                name: 'Walnut Brownie',
+                description: 'Rich chocolate brownie with crunchy walnuts and vanilla scoop',
+                price: 6.99,
+                category: 'Desserts',
+                subCategory: 'Cake',
+                image: 'https://images.unsplash.com/photo-1470124182917-cc6e71b22ecc?w=800&q=80',
+                isVeg: true,
+                spiceLevel: 'Mild',
+            },
+            {
                 name: 'Cola',
                 description: 'Refreshing carbonated soft drink',
                 price: 2.99,

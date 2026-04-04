@@ -36,8 +36,8 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-    await dbConnect();
     try {
+        await dbConnect();
         const { searchParams } = new URL(req.url);
         const tableNumber = searchParams.get('tableNumber');
         const sessionId = searchParams.get('sessionId');
@@ -58,8 +58,8 @@ export async function GET(req: Request) {
             return obj;
         });
         return NextResponse.json(updatedOrders);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Fetch orders error:', error);
-        return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Failed to fetch orders' }, { status: 500 });
     }
 }

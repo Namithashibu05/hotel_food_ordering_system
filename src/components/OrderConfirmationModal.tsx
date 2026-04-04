@@ -76,8 +76,15 @@ export default function OrderConfirmationModal({
           paymentMethod: "cod", // Defaulting to COD as payment happens later
         }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to place order");
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error(`Server returned an invalid response (${res.status})`);
+      }
+
+      if (!res.ok) throw new Error(data?.error || "Failed to place order");
       setSuccessOrderId(data._id);
       setView("success");
     } catch (err: any) {

@@ -82,6 +82,8 @@ export default function AdminDashboard() {
   const [billingSearchQuery, setBillingSearchQuery] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [isRefreshingRatings, setIsRefreshingRatings] = useState(false);
 
   /**
    * Fetches active orders from the server.
@@ -99,10 +101,31 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchRatings = async () => {
+    try {
+      setIsRefreshingRatings(true);
+      const res = await fetch(`/api/rating?t=${Date.now()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRatings(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch ratings:", error);
+    } finally {
+      setIsRefreshingRatings(false);
+    }
+  };
+
   // Initial data fetch and periodic polling for real-time dashboard updates
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 10000); // 10s polling interval
+    fetchRatings();
+    const interval = setInterval(() => {
+      fetchOrders();
+      if (activeSection === 'reports' || activeSection === 'feedback') {
+        fetchRatings();
+      }
+    }, 10000); // 10s polling interval
     return () => clearInterval(interval);
   }, []);
 
@@ -504,6 +527,7 @@ export default function AdminDashboard() {
     { id: "menu", name: "Menu Management", icon: "🍽️" },
     { id: "kitchen", name: "Kitchen", icon: "👨‍🍳" },
     { id: "billing", name: "Billing", icon: "💳" },
+    { id: "feedback", name: "Customer Feedback", icon: "⭐", badge: ratings.length },
     { id: "reports", name: "Reports", icon: "📈" },
     { id: "settings", name: "Settings", icon: "⚙️" },
   ];
@@ -1945,14 +1969,18 @@ export default function AdminDashboard() {
             // Sort dates descending
             const dailyReports = Object.entries(dailyStats).sort((a, b) => b[0].localeCompare(a[0]));
 
+            const avgRating = ratings.length 
+              ? (ratings.reduce((sum: number, r: any) => sum + r.rating, 0) / ratings.length).toFixed(1) 
+              : "0.0";
+
             return (
               <div className="space-y-6">
                 {/* Summary Cards */}
                 <div className="bg-card border border-border rounded-xl p-6">
-                  <h2 className="text-lg font-bold text-foreground">Financial Reports</h2>
-                  <p className="text-xs text-muted-foreground">Overview of completed and delivered orders</p>
+                  <h2 className="text-lg font-bold text-foreground">Financial & Experience Reports</h2>
+                  <p className="text-xs text-muted-foreground">Overview of completed orders and customer satisfaction</p>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-6">
                     <div className="bg-muted p-6 rounded-xl border border-border shadow-sm">
                       <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
                         Total Revenue
@@ -1976,6 +2004,16 @@ export default function AdminDashboard() {
                       <p className="text-3xl font-black text-primary mt-2">
                         ₹{deliveredOrders.length ? (totalRevenue / deliveredOrders.length).toFixed(2) : "0.00"}
                       </p>
+                    </div>
+                    <div className="bg-muted p-6 rounded-xl border border-border shadow-sm border-l-4 border-l-yellow-400">
+                      <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest">
+                        Customer Rating
+                      </p>
+                      <div className="flex items-center gap-2 mt-2">
+                        <p className="text-3xl font-black text-yellow-500">{avgRating}</p>
+                        <span className="text-xl">⭐</span>
+                        <span className="text-xs font-bold text-muted-foreground ml-1">({ratings.length} reviews)</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2033,6 +2071,66 @@ export default function AdminDashboard() {
               </div>
             );
           })()}
+
+          {activeSection === "feedback" && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center bg-card border border-border p-6 rounded-xl">
+                 <div>
+                    <h2 className="text-xl font-bold text-foreground">Customer Feedback</h2>
+                    <p className="text-xs text-muted-foreground mt-1">Manage and respond to customer reviews</p>
+                 </div>
+                 <button 
+                  onClick={fetchRatings}
+                  disabled={isRefreshingRatings}
+                  className="px-4 py-2 bg-secondary text-secondary-foreground rounded-lg text-sm font-bold flex items-center gap-2 hover:bg-muted transition-colors"
+                 >
+                   {isRefreshingRatings ? "Refreshing..." : "Refresh Feed"}
+                 </button>
+              </div>
+
+              <div className="grid gap-4">
+                {ratings.length === 0 ? (
+                  <div className="bg-card border border-border rounded-xl p-12 text-center">
+                    <div className="text-4xl mb-4">💬</div>
+                    <p className="text-muted-foreground">No feedback received yet.</p>
+                  </div>
+                ) : (
+                  ratings.map((r: any) => (
+                    <div key={r._id} className="bg-card border border-border rounded-xl p-6 shadow-sm hover:border-primary/30 transition-colors">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <span key={s} className={`text-lg ${s <= r.rating ? "text-yellow-400" : "text-slate-200"}`}>★</span>
+                            ))}
+                            <span className="ml-2 text-sm font-black text-foreground">{r.rating}/5</span>
+                          </div>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            Post by {r.customerName || "Anonymous Guest"} • Table {r.tableNumber || "N/A"}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground bg-muted px-2 py-1 rounded">
+                          {new Date(r.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      
+                      {r.comment ? (
+                        <p className="text-sm text-foreground leading-relaxed italic bg-muted/50 p-4 rounded-xl border border-border">
+                          "{r.comment}"
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground italic">No written comment provided.</p>
+                      )}
+                      
+                      <div className="mt-4 flex justify-end gap-2">
+                        <span className="text-[10px] font-mono text-muted-foreground">Session: {r.sessionId?.slice(-8) || "Direct"}</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {activeSection === "settings" && (
             <div className="max-w-3xl space-y-6">

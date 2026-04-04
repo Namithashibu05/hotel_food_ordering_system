@@ -4,9 +4,9 @@ import dbConnect from '@/lib/db';
 import Order from '@/models/Order';
 
 export async function POST(req: Request) {
-    await dbConnect();
     try {
-        const body = await req.json();
+        await dbConnect();
+        const body = await req.json().catch(() => ({}));
         const { orderId, sessionId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = body;
 
         if ((!orderId && !sessionId) || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
@@ -56,8 +56,8 @@ export async function POST(req: Request) {
             message: 'Payment verified and status updated'
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Payment verify error:', error);
-        return NextResponse.json({ error: 'Payment verification failed' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Payment verification failed' }, { status: 500 });
     }
 }

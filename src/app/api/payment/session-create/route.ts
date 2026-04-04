@@ -5,14 +5,14 @@ import Order from '@/models/Order';
 
 
 export async function POST(req: Request) {
-    const razorpay = new Razorpay({
-        key_id: process.env.RAZORPAY_KEY_ID!,
-        key_secret: process.env.RAZORPAY_KEY_SECRET!,
-    });
-
-    await dbConnect();
     try {
-        const body = await req.json();
+        const razorpay = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID!,
+            key_secret: process.env.RAZORPAY_KEY_SECRET!,
+        });
+
+        await dbConnect();
+        const body = await req.json().catch(() => ({}));
         const { sessionId, tableNumber } = body;
 
         if (!sessionId) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
         // Calculate total amount (including tax and service charge logic if needed)
         // For simplicity, we calculate the grand total here consistent with front-end
-        const subtotal = orders.reduce((sum, order) => sum + order.totalAmount, 0);
+        const subtotal = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
         const tax = subtotal * 0.05;
         const serviceCharge = subtotal * 0.02;
         const grandTotal = subtotal + tax + serviceCharge;
@@ -63,8 +63,8 @@ export async function POST(req: Request) {
             keyId: process.env.RAZORPAY_KEY_ID,
         }, { status: 201 });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error('Create session payment order error:', error);
-        return NextResponse.json({ error: 'Failed to create payment order' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Failed to create payment order' }, { status: 500 });
     }
 }

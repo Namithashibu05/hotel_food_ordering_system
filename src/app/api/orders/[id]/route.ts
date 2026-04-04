@@ -36,19 +36,19 @@ export async function PATCH(
             const expectedReadyTime = startBasis + (prepTimeMinutes * 60000);
 
             if (now > expectedReadyTime) {
-                // Order is delayed! Add Chicken Soup as compensation
+                // Order is delayed! Add Walnut Brownie as compensation
                 console.log('AUTO-ADDING COMPENSATION FOR ORDER:', id);
                 
                 const compensationItem = {
-                    menuItem: '699ebebb301289289e11af80', // Chicken Soup ID
-                    name: 'Chicken Soup (Delay Compensation)',
+                    menuItem: '65f1c7e9a2b5e00123456789', // Walnut Brownie ID
+                    name: 'Walnut Brownie (Delay Compensation)',
                     quantity: 1,
                     price: 0 // Free
                 };
 
                 updateData.items = [...currentOrder.items, compensationItem];
                 updateData.isDelayedCompensationApplied = true;
-                updateData.compensationNote = 'Your order was delayed. Please enjoy a complimentary Chicken Soup on us!';
+                updateData.compensationNote = 'Your order was delayed. Please enjoy a complimentary Walnut Brownie on us!';
                 
                 // If updating status, ensure we don't overwrite if not in body
                 if (!updateData.status) updateData.status = body.status;
