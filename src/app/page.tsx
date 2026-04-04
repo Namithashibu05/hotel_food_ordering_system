@@ -13,8 +13,7 @@ import OrderConfirmationModal from "@/components/OrderConfirmationModal";
 import { MenuItem } from "@/types";
 import GameZone from "@/components/GameZone";
 import CompensationModal from "@/components/CompensationModal";
-import RatingModal from "@/components/RatingModal";
-import { ShoppingBag, Star, HelpCircle } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 
 
 function MenuContent() {
@@ -38,9 +37,6 @@ function MenuContent() {
   const [selectedItemForModal, setSelectedItemForModal] =
     useState<MenuItem | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [isRatingModalOpen, setIsRatingModalOpen] = useState(false);
-  const [avgRating, setAvgRating] = useState<number>(0);
-  const [ratingCount, setRatingCount] = useState<number>(0);
   const [paymentCustomerName, setPaymentCustomerName] = useState("");
   const [paymentNotes, setPaymentNotes] = useState("");
   const [sessionId, setSessionId] = useState("");
@@ -206,28 +202,6 @@ function MenuContent() {
     // It's acceptable for now given the complexity of perfect debouncing here.
   }, [selectedCategory, vegFilter, debouncedSearch]);
 
-  const fetchRatings = async () => {
-    try {
-      const res = await fetch("/api/rating");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.length > 0) {
-          const sum = data.reduce((acc: number, r: any) => acc + r.rating, 0);
-          setAvgRating(sum / data.length);
-          setRatingCount(data.length);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch ratings", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchRatings();
-    const interval = setInterval(fetchRatings, 60000); // 1m check is enough
-    return () => clearInterval(interval);
-  }, []);
-
   // Real-time search result list for the "box"
   useEffect(() => {
     if (searchQuery.trim().length > 1) {
@@ -369,74 +343,20 @@ function MenuContent() {
       />
 
       {/* Floating Stock Toggle for Quick View */}
-      <div className="fixed bottom-28 right-6 z-40 flex flex-col gap-4">
-        <button 
-          onClick={() => setIsRatingModalOpen(true)}
-          className="bg-yellow-400 text-yellow-950 p-4 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group border-2 border-white/20"
-        >
-          <Star className="w-6 h-6 fill-current" />
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-black whitespace-nowrap text-xs uppercase tracking-widest">
-            Rate Experience
-          </span>
-        </button>
-
-        <button 
-          onClick={() => setIsStockModalOpen(true)}
-          className="bg-emerald-600 text-white p-4 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group border-2 border-white/20"
-        >
-          <div className="relative">
-            <ShoppingBag className="w-6 h-6" />
-            <span className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-emerald-600 rounded-full animate-ping"></span>
-          </div>
-          <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-black whitespace-nowrap text-xs uppercase tracking-widest">
-            Live Stock
-          </span>
-        </button>
-      </div>
+      <button 
+        onClick={() => setIsStockModalOpen(true)}
+        className="fixed bottom-28 right-6 z-40 bg-emerald-600 text-white p-4 rounded-2xl shadow-2xl hover:scale-110 active:scale-95 transition-all flex items-center gap-2 group border-2 border-white/20"
+      >
+        <div className="relative">
+          <ShoppingBag className="w-6 h-6" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-white border-2 border-emerald-600 rounded-full animate-ping"></span>
+        </div>
+        <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 font-black whitespace-nowrap text-xs uppercase tracking-widest">
+          Live Stock
+        </span>
+      </button>
 
       <main className="container mx-auto px-4 py-6 sm:py-8 flex-1">
-        {/* Rating Summary Header */}
-        <div className="flex flex-wrap items-center gap-4 mb-10 bg-card/40 border border-border p-5 rounded-[2rem] shadow-sm">
-           <div className="flex -space-x-3 overflow-hidden">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="inline-block h-10 w-10 rounded-full ring-2 ring-background bg-muted overflow-hidden">
-                   <img src={`https://i.pravatar.cc/100?u=${i}`} alt="" className="w-full h-full object-cover grayscale" />
-                </div>
-              ))}
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-[10px] font-black text-primary-foreground ring-2 ring-background">
-                +{ratingCount}
-              </div>
-           </div>
-           
-           <div className="flex flex-col">
-              <div className="flex items-center gap-1">
-                 <span className="text-2xl font-black text-foreground tracking-tighter">{avgRating > 0 ? avgRating.toFixed(1) : "New"}</span>
-                 <div className="flex text-yellow-400">
-                    {[1, 2, 3, 4, 5].map(i => (
-                      <Star key={i} className={`w-3 h-3 ${i <= Math.round(avgRating) ? 'fill-current' : 'text-slate-200'}`} />
-                    ))}
-                 </div>
-              </div>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Customer Satisfaction Score</p>
-           </div>
-
-           <div className="hidden sm:block h-10 w-px bg-border mx-2" />
-
-           <div className="flex-1 min-w-0 hidden md:block">
-              <p className="text-xs font-medium text-muted-foreground max-w-sm line-clamp-2">
-                "Excellent service and the Walnut Brownie compensation was a lovely touch!" 
-                <span className="ml-2 font-black text-primary">— Recent Review</span>
-              </p>
-           </div>
-
-           <button 
-            onClick={() => setIsRatingModalOpen(true)}
-            className="ml-auto flex items-center gap-2 px-6 py-3 rounded-2xl bg-primary text-primary-foreground font-black text-xs uppercase tracking-widest hover:scale-[1.02] shadow-xl shadow-primary/20 transition-all"
-           >
-             <HelpCircle className="w-4 h-4" />
-             Leave Feedback
-           </button>
-        </div>
         {/* Category Tabs & Veg Filter */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-8">
           <div className="flex overflow-x-auto pb-1 gap-2 scrollbar-hide w-full sm:w-auto">
@@ -654,13 +574,6 @@ function MenuContent() {
       />
       
       <GameZone />
-      <RatingModal 
-        isOpen={isRatingModalOpen}
-        onClose={() => setIsRatingModalOpen(false)}
-        tableNumber={tableNumber}
-        sessionId={sessionId}
-      />
-
       <CompensationModal 
         isOpen={isCompModalOpen} 
         onClose={() => setIsCompModalOpen(false)} 

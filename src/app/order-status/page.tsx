@@ -18,6 +18,7 @@ import {
 import Link from "next/link";
 import GameZone from "@/components/GameZone";
 import CompensationModal from "@/components/CompensationModal";
+import RatingSection from "@/components/RatingSection";
 
 interface OrderItem {
   name: string;
@@ -172,112 +173,134 @@ function OrderStatusContent() {
               </p>
             </div>
           ) : orders.length === 0 ? (
-            <div className="text-center py-20 bg-white rounded-3xl border border-gray-200 px-6 shadow-sm">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                <ShoppingBag className="w-10 h-10 text-gray-300" />
+            <div className="flex flex-col gap-12">
+              <div className="text-center py-20 bg-white rounded-3xl border border-gray-200 px-6 shadow-sm">
+                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ShoppingBag className="w-10 h-10 text-gray-300" />
+                </div>
+                <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+                  No orders yet
+                </h2>
+                <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">
+                  Your session is active but no orders have been placed yet.
+                </p>
+                <Link
+                  href={`/?table=${tableNumber}`}
+                  className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-black px-8 py-4 rounded-2xl hover:scale-105 transition-all active:scale-95 text-lg"
+                >
+                  <span>Order Now</span>
+                </Link>
               </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
-                No orders yet
-              </h2>
-              <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">
-                Your session is active but no orders have been placed yet.
-              </p>
-              <Link
-                href={`/?table=${tableNumber}`}
-                className="inline-flex items-center gap-2 bg-primary text-primary-foreground font-black px-8 py-4 rounded-2xl hover:scale-105 transition-all active:scale-95 text-lg"
-              >
-                <span>Order Now</span>
-              </Link>
+              
+              <div className="space-y-8 pb-12">
+                <div className="flex items-center gap-4 px-2">
+                   <div className="h-px flex-1 bg-gray-200"></div>
+                   <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Share Your Experience</h4>
+                   <div className="h-px flex-1 bg-gray-200"></div>
+                </div>
+                <RatingSection tableNumber={tableNumber} sessionId={sessionId} />
+              </div>
             </div>
           ) : (
-            <div className="bg-white rounded-[2.5rem] border border-gray-200 overflow-hidden shadow-xl">
-              {/* Header with Table info */}
-              <div className="p-8 pb-4 bg-gray-50 border-b border-gray-100 flex justify-between items-end">
-                <div>
-                  <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block mb-1">
-                    Table Session
-                  </span>
-                  <h3 className="text-2xl font-black text-gray-900">
-                    #{tableNumber} - {orders.length} Order{orders.length > 1 ? "s" : ""}
-                  </h3>
+            <div className="flex flex-col gap-12 mb-12">
+              <div className="bg-white rounded-[2.5rem] border border-gray-200 overflow-hidden shadow-xl">
+                {/* Header with Table info */}
+                <div className="p-8 pb-4 bg-gray-50 border-b border-gray-100 flex justify-between items-end">
+                  <div>
+                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block mb-1">
+                      Table Session
+                    </span>
+                    <h3 className="text-2xl font-black text-gray-900">
+                      #{tableNumber} - {orders.length} Order{orders.length > 1 ? "s" : ""}
+                    </h3>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block mb-1">
+                      Total Amount
+                    </span>
+                    <p className="text-2xl font-black text-primary">₹{totalAmount.toFixed(2)}</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-[10px] uppercase font-black tracking-widest text-gray-400 block mb-1">
-                    Total Amount
-                  </span>
-                  <p className="text-2xl font-black text-primary">₹{totalAmount.toFixed(2)}</p>
-                </div>
-              </div>
 
-              <div className="p-6 md:p-8">
-                <div className="space-y-4">
-                  {allItems.map((item, i) => (
-                    <div
-                      key={`${item.orderId}-${i}`}
-                      className="flex flex-col p-4 rounded-2xl bg-gray-50 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300"
-                    >
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-900 text-white text-xs font-black shrink-0">
-                            {item.quantity}×
-                          </span>
-                          <div>
-                            <span className="font-bold text-gray-800 block leading-tight">
-                              {item.name}
+                <div className="p-6 md:p-8">
+                  <div className="space-y-4">
+                    {allItems.map((item, i) => (
+                      <div
+                        key={`${item.orderId}-${i}`}
+                        className="flex flex-col p-4 rounded-2xl bg-gray-50 border border-gray-100 animate-in fade-in slide-in-from-bottom-2 duration-300"
+                      >
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-3">
+                            <span className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-900 text-white text-xs font-black shrink-0">
+                              {item.quantity}×
                             </span>
-                            <span className="text-[10px] font-mono text-gray-400">
-                              REF: #{item.orderId.slice(-6).toUpperCase()}
-                            </span>
+                            <div>
+                              <span className="font-bold text-gray-800 block leading-tight">
+                                {item.name}
+                              </span>
+                              <span className="text-[10px] font-mono text-gray-400">
+                                REF: #{item.orderId.slice(-6).toUpperCase()}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                        <span className="font-black text-gray-900">
-                          ₹{(item.price * item.quantity).toFixed(2)}
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <div className={`px-3 py-1 rounded-full border flex items-center gap-2 ${statusColors[item.status] || "bg-gray-50"} text-[10px]`}>
-                          {getStatusIcon(item.status)}
-                          <span className="font-bold uppercase tracking-tight">
-                            {item.status}
+                          <span className="font-black text-gray-900">
+                            ₹{(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
                         
-                        {item.status !== "Delivered" && (
-                          <div className="flex-1 ml-4 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div 
-                              className={`h-full bg-primary transition-all duration-1000 ${
-                                item.status === "Pending" ? "w-1/4" :
-                                item.status === "Confirmed" ? "w-2/4" :
-                                item.status === "Preparing" ? "w-3/4" :
-                                item.status === "Ready" ? "w-full" : "w-0"
-                              }`}
-                            />
+                        <div className="flex items-center justify-between">
+                          <div className={`px-3 py-1 rounded-full border flex items-center gap-2 ${statusColors[item.status] || "bg-gray-50"} text-[10px]`}>
+                            {getStatusIcon(item.status)}
+                            <span className="font-bold uppercase tracking-tight">
+                              {item.status}
+                            </span>
                           </div>
-                        )}
+                          
+                          {item.status !== "Delivered" && (
+                            <div className="flex-1 ml-4 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full bg-primary transition-all duration-1000 ${
+                                  item.status === "Pending" ? "w-1/4" :
+                                  item.status === "Confirmed" ? "w-2/4" :
+                                  item.status === "Preparing" ? "w-3/4" :
+                                  item.status === "Ready" ? "w-full" : "w-0"
+                                }`}
+                              />
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
 
-                <div className="mt-8 pt-6 border-t border-dashed border-gray-200 flex flex-col gap-4">
-                  <Link 
-                    href={`/bill?table=${tableNumber}`}
-                    className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20 text-lg"
-                  >
-                    <Receipt className="w-6 h-6" />
-                    <span>View Bill & Pay</span>
-                  </Link>
-                  <Link 
-                    href={`/?table=${tableNumber}`}
-                    className="w-full bg-white border-2 border-gray-100 text-gray-900 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
-                  >
-                    <span>Add More Items</span>
-                  </Link>
+                  <div className="mt-8 pt-6 border-t border-dashed border-gray-200 flex flex-col gap-4">
+                    <Link 
+                      href={`/bill?table=${tableNumber}`}
+                      className="w-full bg-primary text-primary-foreground font-black py-5 rounded-2xl flex items-center justify-center gap-3 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-primary/20 text-lg"
+                    >
+                      <Receipt className="w-6 h-6" />
+                      <span>View Bill & Pay</span>
+                    </Link>
+                    <Link 
+                      href={`/?table=${tableNumber}`}
+                      className="w-full bg-white border-2 border-gray-100 text-gray-900 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:bg-gray-50 transition-all"
+                    >
+                      <span>Add More Items</span>
+                    </Link>
+                  </div>
                 </div>
               </div>
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-4 px-2">
+                  <div className="h-px flex-1 bg-gray-200"></div>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-gray-400">Rate Our Service</h4>
+                  <div className="h-px flex-1 bg-gray-200"></div>
+                </div>
+                <RatingSection tableNumber={tableNumber} sessionId={sessionId} />
+              </div>
             </div>
-          ) }
+          )}
         </div>
       </main>
 
