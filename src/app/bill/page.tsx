@@ -40,6 +40,7 @@ function BillContent() {
   const [loading, setLoading] = useState(true);
   const [sessionId, setSessionId] = useState("");
   const [isPaying, setIsPaying] = useState(false);
+  const [hasPaidOrders, setHasPaidOrders] = useState(false);
   const scriptLoaded = useRef(false);
 
   // Load Razorpay script
@@ -66,10 +67,16 @@ function BillContent() {
         const res = await fetch(url);
         if (res.ok) {
           const data = await res.json().catch(() => []);
-          const activeOrders = (Array.isArray(data) ? data : []).filter((o: Order) => 
-            !['Cancelled'].includes(o.status)
+          const rawOrders = Array.isArray(data) ? data : [];
+          
+          // Check if user has ANY paid orders in this session
+          const alreadyPaid = rawOrders.some((o: Order) => o.paymentStatus === 'Paid');
+          setHasPaidOrders(alreadyPaid);
+
+          const unpaidOrders = rawOrders.filter((o: Order) => 
+            !['Cancelled'].includes(o.status) && o.paymentStatus !== 'Paid'
           );
-          setOrders(activeOrders);
+          setOrders(unpaidOrders);
         }
       } catch (error) {
         console.error('Failed to fetch orders', error);
@@ -83,12 +90,9 @@ function BillContent() {
     return () => clearInterval(interval);
   }, [tableNumber]);
 
-  const unpaidOrders = orders.filter(o => o.paymentStatus !== 'Paid');
-  const hasPaidOrders = orders.some(o => o.paymentStatus === 'Paid');
-
-  // Aggregate items from UNPAID orders for the current bill
+  // Aggregate items
   let aggregatedItems: { name: string; quantity: number; price: number }[] = [];
-  unpaidOrders.forEach(order => {
+  orders.forEach(order => {
     order.items.forEach(item => {
       const existing = aggregatedItems.find(i => i.name === item.name && i.price === item.price);
       if (existing) {
@@ -189,39 +193,36 @@ function BillContent() {
                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
                <p className="mt-4 text-gray-500 font-bold">Generating your bill...</p>
              </div>
-          ) : unpaidOrders.length === 0 ? (
+          ) : orders.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-[2rem] border border-gray-200 px-6 shadow-sm print:hidden flex flex-col gap-8">
               {hasPaidOrders ? (
                 <div>
-                  <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <CheckCircle className="w-10 h-10 text-green-500" />
                   </div>
                   <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Payment Complete</h2>
                   <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">Thank you for visiting Hotel Delish! We hope you enjoyed your meal.</p>
+                  <div className="mt-8 border-t border-gray-100 pt-8">
+                    <RatingSection tableNumber={tableNumber} sessionId={sessionId} />
+                  </div>
                 </div>
               ) : (
-                <div>
-                  <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Sparkles className="w-10 h-10 text-indigo-400" />
+                <div className="space-y-6">
+                  <div className="w-24 h-24 bg-indigo-50 rounded-full flex items-center justify-center mx-auto relative overflow-hidden">
+                    <Sparkles className="w-12 h-12 text-indigo-500 animate-pulse relative z-10" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100/50 to-transparent"></div>
                   </div>
-                  <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">Ready to Order?</h2>
-                  <p className="text-gray-500 mb-8 max-w-sm mx-auto font-medium">Your bill is currently empty. Head over to the menu to discover our delicious offerings!</p>
-                  
-                  <Link href={`/?table=${tableNumber}`} className="inline-flex items-center gap-2 bg-indigo-600 text-white font-black px-8 py-4 rounded-2xl hover:bg-indigo-700 hover:scale-105 active:scale-95 transition-all text-lg mb-4 shadow-lg shadow-indigo-200">
-                    Browse Menu
-                  </Link>
+                  <div>
+                    <h2 className="text-3xl font-black text-slate-800 mb-3 tracking-tighter">Feeling Hungry?</h2>
+                    <p className="text-slate-500 mb-8 max-w-[280px] mx-auto font-medium leading-relaxed">Your bill is empty because you haven't ordered anything yet. Let's explore our delicious menu!</p>
+                  </div>
                 </div>
               )}
-              
-              {(hasPaidOrders || unpaidOrders.length > 0) && (
-                <RatingSection tableNumber={tableNumber} sessionId={sessionId} />
-              )}
 
-              {hasPaidOrders && (
-                <Link href={`/?table=${tableNumber}`} className="inline-flex items-center gap-2 border-2 border-slate-200 text-slate-500 font-black px-8 py-4 rounded-2xl hover:bg-slate-50 transition-all text-lg mb-4">
-                  Return to Menu
-                </Link>
-              )}
+              <Link href={`/?table=${tableNumber}`} className="inline-flex items-center gap-3 bg-slate-900 text-white font-black px-10 py-5 rounded-2xl hover:bg-slate-800 transition-all text-lg shadow-xl shadow-slate-200 justify-center group active:scale-95">
+                <span>Grab Our Menu</span>
+                <ChevronLeft className="w-5 h-5 rotate-180 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </div>
           ) : (
             <>
